@@ -1,0 +1,143 @@
+Ports which Need to be Open
+5280,4560,5299
+
+SSH into your machine and install the required dependencies:
+
+apt-get update
+apt-get install make gcc libexpat1-dev libyaml-dev  automake libssl-dev erlang  build-essential libncurses5-dev openssl zlib1g-dev libgd-dev libwebp-dev fop xsltproc unixodbc-dev -y
+
+Download latest Ejabberd 19.02(now it should change in future)
+cd /opt
+wget -O ejab.tgz https://www.process-one.net/downloads/downloads-action.php?file=/ejabberd/19.02/ejabberd-19.02.tgz
+tar -xvzf ejab.tgz
+cd ejabberd-19.02
+
+Configure ejabberd
+./configure --enable-mysql
+make
+make install
+
+Check by running ejabberdctl live
+
+Prepare the database for Ejabberd
+
+login to the database server and create a new user with all access to database:
+GRANT ALL ON ejabberd.* TO 'ejabberd'@'%' IDENTIFIED BY 'password';
+CREATE DATABASE ejabberd;
+flush privileges;
+
+
+Download the schema
+wget    https://raw.githubusercontent.com/processone/ejabberd/master/sql/mysql.sql
+Install the schema in DB
+mysql -h localhost/IP_Address -D ejabberd -u ejabberd -p < mysql.sql
+
+Edit the config file /usr/local/etc/ejabberd/ejabberd.yml to make necessary changes:
+
+Change the authentication method:
+
+auth_method: sql
+Use mysql for all the modules:
+
+default_db: sql
+and Specify the details of database
+
+sql_type: mysql
+sql_server: "IP address or RDS endpoint or localhost"
+sql_database: "ejabberd"
+sql_username: "ejabberd"
+sql_password: "password"
+## If you want to specify the port:
+sql_port: 3306
+Register a user
+
+ejabberdctl register admin localhost password_here
+Edit the config file /usr/local/etc/ejabberd/ejabberd.yml to make the user admin
+
+​
+  ###.   ====================
+  ###'   ACCESS CONTROL LISTS
+  acl:
+    ##
+    ## The 'admin' ACL grants administrative privileges to XMPP accounts.
+    ## You can put here as many accounts as you want.
+    ##
+    admin:
+      user:
+        - "admin@localhost"
+    ##     - "ermine@example.org"
+Finally, Start Ejabberd
+
+ejabberdctl start
+
+## Other details:
+
+sudo apt install mlocate
+sudo updatedb
+locate ejabberdctl | grep bin
+
+
+This will place ejabberd init script under /etc/init.d/ejabberd
+
+A system user called ‘ejabberd‘ is created
+ejabberd application directory is /opt/ejabberd. This is a home for the ejabberd user.
+When ejabberd is started, the processes that are started in the system are beam or beam.smp, and also epmd.
+Step 3: Starting ejabberd service
+Since Ubuntu 18.04 and Ubuntu 16.04 use systemd init system, we need to copy ejabberd.service  to /etc/systemd/system directory.
+
+sudo updatedb
+sudo cp $(locate ejabberd.service) /etc/systemd/system
+Reload systemd
+
+sudo systemctl daemon-reload
+Start the service and enable it to start on boot
+
+sudo systemctl enable --now ejabberd
+Check status by running:
+
+systemctl status ejabberd.service
+Step 4: Create ejabberd XMPP admin account.
+You need an XMPP account and grant him administrative privileges to enter the ejabberd Web Admin. Register an XMPP account on your ejabberd server.
+
+Add ejabberdctl command location to your PATH
+Locate ejabberdctl.
+
+$ locate ejabberdctl | grep bin
+/opt/ejabberd-19.02/bin/ejabberdctl
+Add the path of to your .bashrc file.
+
+vim ~/.bashrc
+Set like below – but replace /opt/ejabberd-19.02/bin/ with your version path as found by locate
+
+PATH=$PATH:/opt/ejabberd-19.02/bin/
+Source the file for the new path to be reflected
+
+source ~/.bashrc
+Then add user
+
+# ejabberdctl register admin ejabberd.example.com StrongPassword
+User admin@example.com successfully registered
+ejabberd.example.com should be replaced with correct server hostname.
+
+Edit the ejabberd configuration file to give administration rights to the XMPP account you created.
+
+$ sudo vim /opt/ejabberd/conf/ejabberd.yml
+
+acl:
+  admin:
+    user:
+      - "admin": "example.com"
+access:
+  configure:
+    admin: allow
+You can grant administrative privileges to many XMPP accounts, and also to accounts in other XMPP servers.
+
+Step 5: Access ejabberd Web Admin
+The Web Admin should be accessible on  http://ip-address:5280/admin/. Open the URL usng your favorite browser.
+
+Other commands
+
+ps -aux
+kill -9 <processID>
+netstat -tulpn | grep :5222
+sudo systemctl stop epmd
