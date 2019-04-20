@@ -1,3 +1,25 @@
+ Mysql command lines
+
+Install mysql
+sudo apt-get update
+sudo apt-get install mysql-server
+
+Use apt to uninstall and remove all MySQL packages:
+$ sudo apt-get remove --purge mysql-server mysql-client mysql-common -y
+$ sudo apt-get autoremove -y
+$ sudo apt-get autoclean
+
+Remove the MySQL folder:
+$ rm -rf /etc/mysql
+
+Delete all MySQL files on your server:
+$ sudo find / -iname 'mysql*' -exec rm -rf {} \;
+
+====================================================================
+$ sudo mysql -u root -p ejabberd < mysql.sql 
+mysql > GRANT ALL PRIVILEGES ON *.* TO ‘admin’@‘localhost' IDENTIFIED BY ‘password’;
+====================================================================
+
 Ports which Need to be Open
 5280,4560,5299
 
@@ -138,6 +160,6 @@ The Web Admin should be accessible on  http://ip-address:5280/admin/. Open the U
 Other commands
 
 ps -aux
-kill -9 <processID>
-netstat -tulpn | grep :5222
+sudo kill -9 <processID>
+sudo netstat -tulpn | grep :5222
 sudo systemctl stop epmd
